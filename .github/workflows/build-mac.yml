@@ -1,20 +1,17 @@
-name: Build and Release Multi-Platform App
+name: Build and Release macOS App
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    strategy:
-      matrix:
-        os: [macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: macos-latest
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v3
 
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v4
       with:
         python-version: '3.x'
     
@@ -22,63 +19,28 @@ jobs:
       run: pip install pyinstaller
         
     - name: Build application
-      shell: bash
       run: |
         pyinstaller hello.py --onedir --noconfirm --clean
-        if [[ "$RUNNER_OS" == "Windows" ]]; then
-          dir dist/
-        else
-          ls -la dist/
-        fi
+        ls -la dist/
 
     - name: Get current date (Beijing Time)
       id: get-date
-      shell: bash
       run: |
-        if [[ "$RUNNER_OS" == "Windows" ]]; then
-          DATE=$(python -c "import time; print(time.strftime('%Y%m%d%H%M%S', time.localtime(time.time()+8 * 3600)))")
-        else
-          DATE=$(TZ='Asia/Shanghai' date +'%Y%m%d%H%M%S')
-        fi
+        DATE=$(TZ='Asia/Shanghai' date +'%Y%m%d%H%M%S')
         echo "date=${DATE}" >> $GITHUB_OUTPUT
         
-    - name: Package the application
-      shell: bash
+    - name: Zip the application bundle
       run: |
         cd dist
-        if [[ "$RUNNER_OS" == "Windows" ]]; then
-          7z a hello_win_${{ steps.get-date.outputs.date }}.zip hello/
-          dir
-        else
-          zip -r hello_macos_${{ steps.get-date.outputs.date }}.zip hello/
-          ls -la
-        fi
-
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: hello_${{ runner.os }}_${{ steps.get-date.outputs.date }}.zip
-        path: dist/hello_${{ runner.os }}_${{ steps.get-date.outputs.date }}.zip
-
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Download all artifacts
-      uses: actions/download-artifact@v4
-      with:
-        path: artifacts
+        zip -r hello_macos_${{ steps.get-date.outputs.date }}.zip hello/
+        ls -la
 
     - name: Create Release
       uses: softprops/action-gh-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        files: artifacts/*
-        tag_name: v${{ needs.build.outputs.date }}
-        name: "Multi-Platform Build ${{ needs.build.outputs.date }}"
-        body: |
-          Automated PyInstaller builds for multiple platforms
-          - Windows build
-          - macOS build
+        files: dist/hello_macos_${{ steps.get-date.outputs.date }}.zip
+        tag_name: v${{ steps.get-date.outputs.date }}
+        name: "macOS Build ${{ steps.get-date.outputs.date }}"
+        body: "Automated PyInstaller build for macOS (onedir mode)"
