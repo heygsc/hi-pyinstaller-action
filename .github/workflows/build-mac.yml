@@ -1,0 +1,34 @@
+name: Build and Release macOS App
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+    
+    - name: Install PyInstaller
+      run: pip install pyinstaller
+        
+    - name: Build executable
+      run: |
+        pyinstaller --onefile hello.py
+        ls -la dist/
+        
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: dist/hello
+        tag_name: v$(date +%Y%m%d%H%M%S)
+        name: "macOS Build $(date +%F)"
+        body: "Automated PyInstaller build for macOS"
+        draft: false
+        prerelease: false
