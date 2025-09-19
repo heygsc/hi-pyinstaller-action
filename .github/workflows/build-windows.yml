@@ -1,0 +1,44 @@
+name: Build and Release Windows App
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+    
+    - name: Install PyInstaller
+      run: pip install pyinstaller
+        
+    - name: Build application
+      run: |
+        pyinstaller hello.py --onedir --noconfirm --clean
+
+    - name: Get current date (Beijing Time)
+      id: get-date
+      run: |
+        $date = (Get-Date).ToUniversalTime().AddHours(8).ToString("yyyyMMddHHmmss")
+        echo "date=$date" >> $env:GITHUB_OUTPUT
+        
+    - name: Zip the application bundle
+      run: |
+        cd dist
+        7z a hello_windows_${{ steps.get-date.outputs.date }}.zip hello/
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        files: dist/hello_windows_${{ steps.get-date.outputs.date }}.zip
+        tag_name: v${{ steps.get-date.outputs.date }}
+        name: "Windows Build ${{ steps.get-date.outputs.date }}"
+        body: "Automated PyInstaller build for Windows (onedir mode)"
