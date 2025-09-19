@@ -1,33 +1,33 @@
-name: 构建多平台应用
+name: Build and Release Multi-Platform App
 
 on:
   workflow_dispatch:
 
 jobs:
-  构建:
+  build:
     strategy:
       matrix:
-        平台: [macos-latest, windows-latest]
-    runs-on: ${{ matrix.平台 }}
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     
     steps:
     - uses: actions/checkout@v3
 
-    - name: 设置Python环境
+    - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.x'
     
-    - name: 安装PyInstaller
+    - name: Install PyInstaller
       run: pip install pyinstaller
         
-    - name: 构建应用
+    - name: Build application
       run: |
         pyinstaller hello.py --onedir --noconfirm --clean
         ls -la dist/
 
-    - name: 获取北京时间
-      id: 获取时间
+    - name: Get current date (Beijing Time)
+      id: get-date
       run: |
         if [[ "$RUNNER_OS" == "Windows" ]]; then
           DATE=$(python -c "import time; print(time.strftime('%Y%m%d%H%M%S', time.localtime(time.time()+8 * 3600)))")
@@ -36,22 +36,22 @@ jobs:
         fi
         echo "date=${DATE}" >> $GITHUB_OUTPUT
         
-    - name: 打包应用
+    - name: Package the application
       run: |
         cd dist
         if [[ "$RUNNER_OS" == "Windows" ]]; then
-          7z a hello_windows_${{ steps.获取时间.outputs.date }}.zip hello/
+          7z a hello_win_${{ steps.get-date.outputs.date }}.zip hello/
         else
-          zip -r hello_macos_${{ steps.获取时间.outputs.date }}.zip hello/
+          zip -r hello_macos_${{ steps.get-date.outputs.date }}.zip hello/
         fi
         ls -la
 
-    - name: 创建发布版本
+    - name: Create Release
       uses: softprops/action-gh-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        files: dist/hello_${{ runner.os }}_${{ steps.获取时间.outputs.date }}.zip
-        tag_name: v${{ steps.获取时间.outputs.date }}
-        name: "${{ runner.os }} 构建 ${{ steps.获取时间.outputs.date }}"
-        body: "自动化 PyInstaller 构建 (${{ runner.os }} 平台)"
+        files: dist/hello_${{ runner.os }}_${{ steps.get-date.outputs.date }}.zip
+        tag_name: v${{ steps.get-date.outputs.date }}
+        name: "${{ runner.os }} Build ${{ steps.get-date.outputs.date }}"
+        body: "Automated PyInstaller build for ${{ runner.os }} (onedir mode)"
