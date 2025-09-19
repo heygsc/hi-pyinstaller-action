@@ -9,7 +9,7 @@ jobs:
     
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
@@ -18,15 +18,15 @@ jobs:
     - name: Install PyInstaller
       run: pip install pyinstaller
         
-    - name: Build executable
+    - name: Build application
       run: |
-        pyinstaller --onefile hello.py
+        pyinstaller hello.py --onedir --noconfirm --clean
         ls -la dist/
 
-    - name: Get current date
+    - name: Get current date (Beijing Time)
       id: get-date
       run: |
-        DATE=$(date -u +'%Y%m%d%H%M%S')
+        DATE=$(TZ='Asia/Shanghai' date +'%Y%m%d%H%M%S')
         echo "date=${DATE}" >> $GITHUB_OUTPUT
         
     - name: Create Release
@@ -34,7 +34,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        files: dist/hello
+        files: dist/hello/*
         tag_name: v${{ steps.get-date.outputs.date }}
         name: "macOS Build ${{ steps.get-date.outputs.date }}"
-        body: "Automated PyInstaller build for macOS"
+        body: "Automated PyInstaller build for macOS (onedir mode)"
