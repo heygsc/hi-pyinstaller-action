@@ -29,12 +29,18 @@ jobs:
         DATE=$(TZ='Asia/Shanghai' date +'%Y%m%d%H%M%S')
         echo "date=${DATE}" >> $GITHUB_OUTPUT
         
+    - name: Zip the application bundle
+      run: |
+        cd dist
+        zip -r hello_macos_${{ steps.get-date.outputs.date }}.zip hello/
+        ls -la
+
     - name: Create Release
       uses: softprops/action-gh-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        files: dist/hello/*
+        files: dist/hello_macos_${{ steps.get-date.outputs.date }}.zip
         tag_name: v${{ steps.get-date.outputs.date }}
         name: "macOS Build ${{ steps.get-date.outputs.date }}"
         body: "Automated PyInstaller build for macOS (onedir mode)"
