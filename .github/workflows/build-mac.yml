@@ -24,7 +24,11 @@ jobs:
     - name: Build application
       run: |
         pyinstaller hello.py --onedir --noconfirm --clean
-        ls -la dist/
+        if [[ "$RUNNER_OS" == "Windows" ]]; then
+          dir dist/
+        else
+          ls -la dist/
+        fi
 
     - name: Get current date (Beijing Time)
       id: get-date
@@ -41,17 +45,37 @@ jobs:
         cd dist
         if [[ "$RUNNER_OS" == "Windows" ]]; then
           7z a hello_win_${{ steps.get-date.outputs.date }}.zip hello/
+          dir
         else
           zip -r hello_macos_${{ steps.get-date.outputs.date }}.zip hello/
+          ls -la
         fi
-        ls -la
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: hello_${{ runner.os }}_${{ steps.get-date.outputs.date }}.zip
+        path: dist/hello_${{ runner.os }}_${{ steps.get-date.outputs.date }}.zip
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: artifacts
 
     - name: Create Release
       uses: softprops/action-gh-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        files: dist/hello_${{ runner.os }}_${{ steps.get-date.outputs.date }}.zip
-        tag_name: v${{ steps.get-date.outputs.date }}
-        name: "${{ runner.os }} Build ${{ steps.get-date.outputs.date }}"
-        body: "Automated PyInstaller build for ${{ runner.os }} (onedir mode)"
+        files: artifacts/*
+        tag_name: v${{ needs.build.outputs.date }}
+        name: "Multi-Platform Build ${{ needs.build.outputs.date }}"
+        body: |
+          Automated PyInstaller builds for multiple platforms
+          - Windows build
+          - macOS build
