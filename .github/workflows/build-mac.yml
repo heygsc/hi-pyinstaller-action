@@ -22,6 +22,12 @@ jobs:
       run: |
         pyinstaller --onefile hello.py
         ls -la dist/
+
+    - name: Get current date
+      id: get-date
+      run: |
+        DATE=$(date -u +'%Y%m%d%H%M%S')
+        echo "date=${DATE}" >> $GITHUB_OUTPUT
         
     - name: Create Release
       uses: softprops/action-gh-release@v1
@@ -29,6 +35,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         files: dist/hello
-        tag_name: v$(date -u +'%Y%m%d%H%M%S')
-        name: "macOS Build $(date -u +'%F')"
+        tag_name: v${{ steps.get-date.outputs.date }}
+        name: "macOS Build ${{ steps.get-date.outputs.date }}"
         body: "Automated PyInstaller build for macOS"
