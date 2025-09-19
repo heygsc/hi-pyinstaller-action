@@ -22,9 +22,10 @@ jobs:
       run: pip install pyinstaller
         
     - name: Build application
+      shell: bash
       run: |
         pyinstaller hello.py --onedir --noconfirm --clean
-        if [[ "${{ runner.os }}" == "Windows" ]]; then
+        if [[ "$RUNNER_OS" == "Windows" ]]; then
           dir dist/
         else
           ls -la dist/
@@ -32,17 +33,20 @@ jobs:
 
     - name: Get current date (Beijing Time)
       id: get-date
+      shell: bash
       run: |
-        if [[ "${{ runner.os }}" == "Windows" ]]; then
-          echo "date=$(python -c "import time; print(time.strftime('%Y%m%d%H%M%S', time.localtime(time.time()+8 * 3600)))")" >> $GITHUB_OUTPUT
+        if [[ "$RUNNER_OS" == "Windows" ]]; then
+          DATE=$(python -c "import time; print(time.strftime('%Y%m%d%H%M%S', time.localtime(time.time()+8 * 3600)))")
         else
-          echo "date=$(TZ='Asia/Shanghai' date +'%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
+          DATE=$(TZ='Asia/Shanghai' date +'%Y%m%d%H%M%S')
         fi
+        echo "date=${DATE}" >> $GITHUB_OUTPUT
         
     - name: Package the application
+      shell: bash
       run: |
         cd dist
-        if [[ "${{ runner.os }}" == "Windows" ]]; then
+        if [[ "$RUNNER_OS" == "Windows" ]]; then
           7z a hello_win_${{ steps.get-date.outputs.date }}.zip hello/
           dir
         else
