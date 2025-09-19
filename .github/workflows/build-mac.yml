@@ -25,10 +25,10 @@ jobs:
         
     - name: Create Release
       uses: softprops/action-gh-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         files: dist/hello
-        tag_name: v$(date +%Y%m%d%H%M%S)
-        name: "macOS Build $(date +%F)"
+        tag_name: v$(date -u +'%Y%m%d%H%M%S')
+        name: "macOS Build $(date -u +'%F')"
         body: "Automated PyInstaller build for macOS"
-        draft: false
-        prerelease: false
