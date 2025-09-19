@@ -21,7 +21,6 @@ jobs:
     - name: Build application
       run: |
         pyinstaller hello.py --onedir --noconfirm --clean
-        ls -la dist/
 
     - name: Get current date (Beijing Time)
       id: get-date
@@ -33,7 +32,6 @@ jobs:
       run: |
         cd dist
         zip -r hello_macos_${{ steps.get-date.outputs.date }}.zip hello/
-        ls -la
 
     - name: Create Release
       uses: softprops/action-gh-release@v1
